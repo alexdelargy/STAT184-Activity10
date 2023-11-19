@@ -1,0 +1,152 @@
+---
+title: "Activity9"
+author: "Alexander Delargy"
+date: "2023-11-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, dpi = 300)
+```
+
+```{r imports, include=FALSE}
+library(groundhog)
+pkgs <- c("tidyverse", "dplyr", "ggplot2", "janitor", "knitr", "kableExtra")
+groundhog.library(pkgs, '2023-11-17')
+
+```
+
+## Collatz Conjecture
+
+The Collatz Conjecture is a famous unsolved problem in math. It asks whether repeatedly performing the same two operations on an integer will transform it into 1. It is expressed as follows:
+
+```{=tex}
+$
+\begin{equation}
+
+f(n) =
+
+\begin{cases}
+
+f(n/2) & \text{if } n \text{ is even} \\\\
+
+f(3n + 1) & \text{if } n \text{ is odd} \\\\
+
+\text{stop} & \text{if } n \text{ is one}
+
+\end{cases}
+
+\end{equation}
+$
+```
+```{r CollatzFunction}
+getCollatz <- function(n){
+  if (n<=1){
+    return (0) # Return 0 if n equal to one
+  }
+  else if (n %% 2 == 0){
+    return (1 + getCollatz(n/2)) # Return 1 plus the count of n/2
+  }
+  else{
+    return (1 + getCollatz(3*n+1)) # Return 1 plus the count of 3n+1
+  }
+}
+
+```
+
+```{r CollatzHistogram, echo=FALSE}
+
+# Create stopping time dataframe
+Collatz <- data.frame(stoppingTimes=sapply(X=seq(1, 10000), FUN=getCollatz)) 
+
+# Plot histogram
+ggplot(Collatz) +
+  aes(x=stoppingTimes) +
+  geom_histogram(binwidth=5, color="black", fill="white") +
+  labs(
+    x = "Stopping Times",
+    y = "Frequency",
+    title = "Stopping Times of Collatz Conjecture"
+  ) +
+  scale_x_continuous(breaks = seq(0, max(Collatz$stoppingTimes), by = 20))
+```
+
+The above histogram demonstrates the distribution of Stopping Times among the first 10,000 integers. It has peaks around 50 and 130. This shows that a large number of the first 10,000 integers have stopping times from the Collatz Conjecture around these values.
+
+## Diamonds
+
+In this section, we will explore the diamonds data set from the ggplot2 package and try to find a relationship between different parameters of the diamond and the price of a diamond. The diamonds data set includes multiple parameters about its size, shape, quality, and price. Here is a preview of the data set:
+
+```{r diamondsLoad, echo=FALSE}
+data(diamonds)
+head(diamonds) %>%
+  kable(
+    caption = "Diamonds Data Set", # Add title
+    booktabs = TRUE,
+    align = c(rep("c", ncol(diamonds))) # Add alignment for 4 columns
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "condensed"), # Add striping for table
+    font_size = 16
+  )
+
+```
+
+### In particular, we will look at the relationship between Carat, Clarity, and Price.
+
+```{r diamondsFilter}
+
+diamondsFiltered <- diamonds %>%
+  select('price', 'carat', 'clarity') # Explore carat, clarity, and price
+
+diamondsFilteredSample = slice_sample(diamondsFiltered, prop=0.3) # Sample is taken to avoid overplotting
+  
+```
+
+```{r diamondsVisualization}
+ggplot(data = diamondsFilteredSample) +
+  aes(x = carat, y = price, color = clarity) + # Color represents clarity
+  geom_point(
+    shape = "circle small", 
+    size = 0.8 # Smaller points better show relationship
+  ) +
+  labs(
+    x='Carat',
+    y='Price'
+  )+
+  scale_x_continuous(breaks = seq(0, max(diamondsFilteredSample$carat), by = 0.5))+
+  theme_classic()
+
+```
+
+### Graph Interpretation
+
+The above graph shows a positive correlation between Carat and Price. Generally, Price increases as Carat increases. The Clarity rating of the diamond is represented by the color of the glyph. The Clarity decreases as the glyph gets darker. From this scatter plot, we can see that for any given Carat value, the lighter glyphs tend to have a higher price. We can infer that there is a positive correlation between Clarity and Price based on this visualization.
+
+### Summary Table
+
+```{r, warning=FALSE}
+diamondsFiltered %>%
+  group_by(clarity) %>%
+  summarise(
+    "Average Price" = round(mean(price), digits=2), # Average Price by Clarity
+    "Average Carat" = round(mean(carat), digits=2) # Average Carat by Clarity
+  ) %>%
+  mutate(
+    across(where(is.numeric), format, big.mark = ",") # Add commas for large numbers
+  ) %>%
+  kable(
+    caption = "Diamonds by Clarity (Worst to Best)", # Add title
+    booktabs = TRUE,
+    align = c(rep("c", ncol(diamondsFiltered))) # Add alignment for 4 columns
+  ) %>%
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "condensed"), # Add striping for table
+    font_size = 16
+  )
+  
+```
+
+## Reflections
+
+So far in this course I have learned about the RStudio environment, R programming language, and how to use R for data analysis and presentation. Specifically, I have learned how to import data through file uploads, web scraping, and loading data sets through packages in R. I have also learned how to utilize data wrangling packages such as dplyr and janitor to transform data into Tidy Data format. Lastly, I have learned how to create a myriad of visualizations that allow for visual analytics.
